@@ -1,4 +1,7 @@
 package staffsphere.ui;
+import staffsphere.dao.UserDAO;
+import staffsphere.model.User;
+import staffsphere.util.CurrentUser;
 
 import javax.swing.*;
 import java.awt.*;
@@ -57,11 +60,47 @@ public class LoginUI extends JFrame{
         });
 
         btnLogin.addActionListener(e-> {
-            String userName = tUserName.getText();
-            String passWord = new String(tPassword.getPassword());
+            String userName = tUserName.getText().trim();
+            String passWord = new String(tPassword.getPassword()).trim();
 
-            System.out.println("Username:" + userName);
-            System.out.println("Password:" + passWord);
+            if(userName.isEmpty() || passWord.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Username and Password are required", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            UserDAO userDao = new UserDAO();
+            User user = userDao.getUserByUsername(userName);
+
+            if(user == null){
+                JOptionPane.showMessageDialog(this, "Invalid Username or Password", "Login Failed", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if(!passWord.equals(user.getPassword())){
+                JOptionPane.showMessageDialog(this,"Invalid Username or Password", "Login Failed", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if(!user.getStatus().equalsIgnoreCase("active")) {
+                JOptionPane.showMessageDialog(this, "Account is Disabled. Please contact admin.", "Access Denied", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            String role = user.getRole();
+
+            JOptionPane.showMessageDialog(this, "Login Successful! Role: " + role, "Success", JOptionPane.INFORMATION_MESSAGE);
+
+            if(user != null) {
+                JOptionPane.showMessageDialog(this, "Login Successful");
+
+                user = userDao.getUserByUsername(userName);
+
+                if(user != null && user.getPassword().equals(passWord)) {
+                    CurrentUser.set(user);
+                    new DashboardUI(user).setVisible(true);
+                    dispose();
+                }
+
+            }else{
+                JOptionPane.showMessageDialog(this, "Invalid Username or Password");
+            }
         });
     }
 }
