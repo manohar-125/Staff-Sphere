@@ -25,7 +25,7 @@ public class StaffManagementUI extends JFrame {
         }
 
         setTitle("Staff Management");
-        setSize(700, 400);
+        setSize(1100, 500);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
@@ -45,10 +45,10 @@ public class StaffManagementUI extends JFrame {
         JCheckBox showInactiveCheckBox = new JCheckBox("Show Inactive");
         topPanel.add(showInactiveCheckBox, BorderLayout.SOUTH);
 
-        String[] columns = {"ID", "Name", "Email", "Role", "Salary"};
+        String[] columns = {"ID", "Emp Code", "Name", "Email", "Phone", "Department", "Designation", "Salary", "Status"};
         tableModel = new DefaultTableModel(columns, 0) {
             public boolean isCellEditable(int row, int col){
-                return col != 0;
+                return false;
             }
         };
         table = new JTable(tableModel);
@@ -66,52 +66,96 @@ public class StaffManagementUI extends JFrame {
         JButton btnDelete = new JButton("Delete");
         bottomPanel.add(btnDelete);
 
+        JButton btnRestore = new JButton("Restore");
+        btnRestore.setEnabled(false);
+        bottomPanel.add(btnRestore);
+
         add(bottomPanel, BorderLayout.SOUTH);
 
         btnAdd.addActionListener(e-> {
+            JTextField empCodeField = new JTextField();
             JTextField nameField = new JTextField();
             JTextField emailField = new JTextField();
-            JTextField roleField = new JTextField();
+            JTextField phoneField = new JTextField();
+            JTextField departmentField = new JTextField();
+            JTextField designationField = new JTextField();
             JTextField salaryField = new JTextField();
+            JComboBox<String> roleComboBox = new JComboBox<>(new String[]{"staff", "hr"});
+            JPasswordField passwordField = new JPasswordField();
+            JPasswordField confirmPasswordField = new JPasswordField();
 
             Object[] form = {
+                    "Emp Code (Username):", empCodeField,
                     "Name:", nameField,
                     "Email:", emailField,
-                    "Role:", roleField,
-                    "Salary:", salaryField
+                    "Phone:", phoneField,
+                    "Department:", departmentField,
+                    "Designation:", designationField,
+                    "Salary:", salaryField,
+                    "Role:", roleComboBox,
+                    "Password:", passwordField,
+                    "Confirm Password:", confirmPasswordField
             };
 
-            int choice = JOptionPane.showConfirmDialog(this, form, "Add Staff", JOptionPane.OK_CANCEL_OPTION);
+            int choice = JOptionPane.showConfirmDialog(this, form, "Add Employee", JOptionPane.OK_CANCEL_OPTION);
             if(choice != JOptionPane.OK_OPTION){
                 return;
             }
 
-            if(nameField.getText().isBlank() || emailField.getText().isBlank() || roleField.getText().isBlank() || salaryField.getText().isBlank()) {
-                JOptionPane.showMessageDialog(this, "All fields are required");
+            if(empCodeField.getText().isBlank() || nameField.getText().isBlank() || emailField.getText().isBlank()) {
+                JOptionPane.showMessageDialog(this, "Emp Code, Name, and Email are required");
                 return;
             }
 
-            if( !emailField.getText().contains("@")) {
-                JOptionPane.showMessageDialog(this, "Invalid email");
+            String password = new String(passwordField.getPassword());
+            String confirmPassword = new String(confirmPasswordField.getPassword());
+
+            if(password.isEmpty() || confirmPassword.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Password is required");
                 return;
             }
 
-            double salry;
+            if(!password.equals(confirmPassword)) {
+                JOptionPane.showMessageDialog(this, "Passwords do not match");
+                return;
+            }
+
+            if(password.length() < 6) {
+                JOptionPane.showMessageDialog(this, "Password must be at least 6 characters");
+                return;
+            }
+
+            if(!emailField.getText().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+                JOptionPane.showMessageDialog(this, "Invalid email format");
+                return;
+            }
+
+            double salary;
             try {
-                salry = Double.parseDouble(salaryField.getText());
+                salary = Double.parseDouble(salaryField.getText());
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(this, "Invalid salary value");
                 return;
             }
 
             Staff s = new Staff();
-            s.setName(nameField.getText());
-            s.setEmail(emailField.getText());
-            s.setRole(roleField.getText());
-            s.setSalary(salry);
+            s.setEmpCode(empCodeField.getText().trim());
+            s.setName(nameField.getText().trim());
+            s.setEmail(emailField.getText().trim());
+            s.setPhone(phoneField.getText().trim());
+            s.setDepartment(departmentField.getText().trim());
+            s.setDesignation(designationField.getText().trim());
+            s.setSalary(salary);
 
-            staffDAO.addStaff(s);
-            loadStaffData();
+            String role = (String) roleComboBox.getSelectedItem();
+            boolean success = staffDAO.addStaff(s, password, role);
+            
+            if(success) {
+                JOptionPane.showMessageDialog(this, "Employee and user account created successfully");
+                loadStaffData();
+            } else {
+                JOptionPane.showMessageDialog(this, "Failed to add employee. Username may already exist.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
         });
 
         btnDelete.addActionListener(e -> {
@@ -122,12 +166,23 @@ public class StaffManagementUI extends JFrame {
                 return;
             }
             int id = (int) tableModel.getValueAt(row, 0);
-            int choice = JOptionPane.showConfirmDialog(this, "Are you sure! you want to delete?", "Confirm Delete", JOptionPane.YES_NO_OPTION);
-            if( choice != JOptionPane.YES_OPTION){
+            String empCode = tableModel.getValueAt(row, 1).toString();
+            
+            int choice = JOptionPane.showConfirmDialog(this, 
+                "Are you sure you want to deactivate " + empCode + "?", 
+                "Confirm Deactivate", 
+                JOptionPane.YES_NO_OPTION);
+            if(choice != JOptionPane.YES_OPTION){
                 return;
             }
-            staffDAO.deleteStaff(id);
-            loadStaffData();
+            
+            boolean success = staffDAO.deleteStaff(id);
+            if(success) {
+                JOptionPane.showMessageDialog(this, "Employee deactivated successfully");
+                loadStaffData();
+            } else {
+                JOptionPane.showMessageDialog(this, "Failed to deactivate. You may not have permission.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
         });
 
         btnUpdate.addActionListener(e -> {
@@ -139,25 +194,37 @@ public class StaffManagementUI extends JFrame {
             }
 
             int id = (int) tableModel.getValueAt(row, 0);
-            String name = tableModel.getValueAt(row, 1).toString();
-            String email = tableModel.getValueAt(row, 2).toString();
-            String role = tableModel.getValueAt(row, 3).toString();
-            String salary = tableModel.getValueAt(row, 4).toString();
+            String empCode = tableModel.getValueAt(row, 1).toString();
+            String name = tableModel.getValueAt(row, 2).toString();
+            String email = tableModel.getValueAt(row, 3).toString();
+            String phone = tableModel.getValueAt(row, 4) != null ? tableModel.getValueAt(row, 4).toString() : "";
+            String department = tableModel.getValueAt(row, 5) != null ? tableModel.getValueAt(row, 5).toString() : "";
+            String designation = tableModel.getValueAt(row, 6) != null ? tableModel.getValueAt(row, 6).toString() : "";
+            String salary = tableModel.getValueAt(row, 7).toString();
 
+            JTextField empCodeField = new JTextField();
             JTextField nameField = new JTextField();
             JTextField emailField = new JTextField();
-            JTextField roleField = new JTextField();
+            JTextField phoneField = new JTextField();
+            JTextField departmentField = new JTextField();
+            JTextField designationField = new JTextField();
             JTextField salaryField = new JTextField();
 
+            empCodeField.setText(empCode);
             nameField.setText(name);
             emailField.setText(email);
-            roleField.setText(role);
+            phoneField.setText(phone);
+            departmentField.setText(department);
+            designationField.setText(designation);
             salaryField.setText(salary);
 
             Object[] form = {
+                    "Emp Code:", empCodeField,
                     "Name:", nameField,
                     "Email:", emailField,
-                    "Role:", roleField,
+                    "Phone:", phoneField,
+                    "Department:", departmentField,
+                    "Designation:", designationField,
                     "Salary:", salaryField
             };
 
@@ -166,36 +233,76 @@ public class StaffManagementUI extends JFrame {
                 return;
             }
 
-
-            Staff s = new Staff();
-
-            if(nameField.getText().isBlank() || emailField.getText().isBlank() || roleField.getText().isBlank() || salaryField.getText().isBlank()) {
-                JOptionPane.showMessageDialog(this, "All fields are required");
+            if(empCodeField.getText().isBlank() || nameField.getText().isBlank() || emailField.getText().isBlank()) {
+                JOptionPane.showMessageDialog(this, "Emp Code, Name, and Email are required");
                 return;
             }
 
-            s.setId(id);
-            s.setName(nameField.getText());
-
-            if( !emailField.getText().contains("@")) {
-                JOptionPane.showMessageDialog(this, "Invalid email");
+            if(!emailField.getText().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+                JOptionPane.showMessageDialog(this, "Invalid email format");
                 return;
             }
-            s.setEmail((emailField.getText()));
 
-            s.setRole(roleField.getText());
-
-            double salry;
+            double salaryValue;
             try {
-                salry = Double.parseDouble(salaryField.getText());
+                salaryValue = Double.parseDouble(salaryField.getText());
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(this, "Invalid salary value");
                 return;
             }
-            s.setSalary(salry);
 
-            staffDAO.updateStaff(s);
-            loadStaffData();
+            Staff s = new Staff();
+            s.setId(id);
+            s.setEmpCode(empCodeField.getText().trim());
+            s.setName(nameField.getText().trim());
+            s.setEmail(emailField.getText().trim());
+            s.setPhone(phoneField.getText().trim());
+            s.setDepartment(departmentField.getText().trim());
+            s.setDesignation(designationField.getText().trim());
+            s.setSalary(salaryValue);
+
+            boolean success = staffDAO.updateStaff(s);
+            if(success) {
+                JOptionPane.showMessageDialog(this, "Staff updated successfully");
+                loadStaffData();
+            } else {
+                JOptionPane.showMessageDialog(this, "Failed to update. You may not have permission.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        btnRestore.addActionListener(e -> {
+            int row = table.getSelectedRow();
+
+            if(row == -1){
+                JOptionPane.showMessageDialog(this, "Please select an inactive staff to restore");
+                return;
+            }
+            
+            String status = tableModel.getValueAt(row, 8).toString();
+            if(!status.equalsIgnoreCase("inactive")) {
+                JOptionPane.showMessageDialog(this, "Selected employee is already active");
+                return;
+            }
+            
+            int id = (int) tableModel.getValueAt(row, 0);
+            String empCode = tableModel.getValueAt(row, 1).toString();
+            
+            int choice = JOptionPane.showConfirmDialog(this, 
+                "Restore " + empCode + " to active status?", 
+                "Confirm Restore", 
+                JOptionPane.YES_NO_OPTION);
+            if(choice != JOptionPane.YES_OPTION){
+                return;
+            }
+            
+            boolean success = staffDAO.restoreStaff(id);
+            if(success) {
+                JOptionPane.showMessageDialog(this, "Employee restored successfully");
+                showInactiveCheckBox.setSelected(true);
+                loadStaffData(true);
+            } else {
+                JOptionPane.showMessageDialog(this, "Failed to restore. You may not have permission.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
         });
 
         btnSearch.addActionListener( e -> {
@@ -212,39 +319,45 @@ public class StaffManagementUI extends JFrame {
             for (Staff s : result){
                 tableModel.addRow(new Object[]{
                         s.getId(),
+                        s.getEmpCode(),
                         s.getName(),
                         s.getEmail(),
-                        s.getRole(),
-                        s.getSalary()
+                        s.getPhone(),
+                        s.getDepartment(),
+                        s.getDesignation(),
+                        s.getSalary(),
+                        s.getStatus()
                 });
             }
         });
 
         showInactiveCheckBox.addActionListener( e -> {
             boolean showInactive = showInactiveCheckBox.isSelected();
-            List<Staff> list = staffDAO.getAllStaff(showInactive);
-
-            tableModel.setRowCount(0);
-            for (Staff s : list) {
-                tableModel.addRow(new Object[]{
-                        s.getId(),
-                        s.getName(),
-                        s.getEmail(),
-                        s.getRole(),
-                        s.getSalary()
-                });
-            }
+            btnRestore.setEnabled(showInactive);
+            loadStaffData(showInactive);
         });
 
-        loadStaffData();
+        loadStaffData(false);
     }
 
     private void loadStaffData() {
+        loadStaffData(false);
+    }
+
+    private void loadStaffData(boolean includeInactive) {
         tableModel.setRowCount(0);
 
-        for (Staff s : staffDAO.getAllStaff(false)) {
+        for (Staff s : staffDAO.getAllStaff(includeInactive)) {
             tableModel.addRow(new Object[]{
-                    s.getId(), s.getName(), s.getEmail(), s.getRole(), s.getSalary()
+                    s.getId(),
+                    s.getEmpCode(),
+                    s.getName(),
+                    s.getEmail(),
+                    s.getPhone(),
+                    s.getDepartment(),
+                    s.getDesignation(),
+                    s.getSalary(),
+                    s.getStatus()
             });
         }
     }

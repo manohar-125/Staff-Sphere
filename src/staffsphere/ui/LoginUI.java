@@ -2,6 +2,7 @@ package staffsphere.ui;
 import staffsphere.dao.UserDAO;
 import staffsphere.model.User;
 import staffsphere.util.CurrentUser;
+import staffsphere.util.PasswordUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -75,32 +76,31 @@ public class LoginUI extends JFrame{
                 JOptionPane.showMessageDialog(this, "Invalid Username or Password", "Login Failed", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            if(!passWord.equals(user.getPassword())){
+
+            // Check password - supports both plain text (legacy) and BCrypt hashed passwords
+            boolean passwordMatches = false;
+            if(user.getPassword().startsWith("$2a$") || user.getPassword().startsWith("$2b$")) {
+                // BCrypt hashed password
+                passwordMatches = PasswordUtil.verifyPassword(passWord, user.getPassword());
+            } else {
+                // Plain text password (for backward compatibility)
+                passwordMatches = passWord.equals(user.getPassword());
+            }
+
+            if(!passwordMatches){
                 JOptionPane.showMessageDialog(this,"Invalid Username or Password", "Login Failed", JOptionPane.ERROR_MESSAGE);
                 return;
             }
+
             if(!user.getStatus().equalsIgnoreCase("active")) {
                 JOptionPane.showMessageDialog(this, "Account is Disabled. Please contact admin.", "Access Denied", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            String role = user.getRole();
 
-            JOptionPane.showMessageDialog(this, "Login Successful! Role: " + role, "Success", JOptionPane.INFORMATION_MESSAGE);
-
-            if(user != null) {
-                JOptionPane.showMessageDialog(this, "Login Successful");
-
-                user = userDao.getUserByUsername(userName);
-
-                if(user != null && user.getPassword().equals(passWord)) {
-                    CurrentUser.set(user);
-                    new DashboardUI(user).setVisible(true);
-                    dispose();
-                }
-
-            }else{
-                JOptionPane.showMessageDialog(this, "Invalid Username or Password");
-            }
+            CurrentUser.set(user);
+            JOptionPane.showMessageDialog(this, "Login Successful! Role: " + user.getRole(), "Success", JOptionPane.INFORMATION_MESSAGE);
+            new DashboardUI(user).setVisible(true);
+            dispose();
         });
     }
 }

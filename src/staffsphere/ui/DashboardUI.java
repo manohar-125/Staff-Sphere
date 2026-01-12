@@ -3,6 +3,7 @@ package staffsphere.ui;
 import javax.swing.*;
 import java.awt.*;
 import staffsphere.model.User;
+import staffsphere.util.CurrentUser;
 
 public class DashboardUI extends JFrame{
 
@@ -16,30 +17,38 @@ public class DashboardUI extends JFrame{
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        JLabel welcomeLabel = new JLabel("Welcome, " + user.getUsername(), SwingConstants.CENTER);
+        JLabel welcomeLabel = new JLabel("Welcome, " + user.getUsername() + " (" + user.getRole() + ")", SwingConstants.CENTER);
         welcomeLabel.setFont(new Font("Arial", Font.BOLD, 18));
 
-        JButton btnManageStaff = new JButton("Manage Staff");
+        JPanel buttonPanel = new JPanel();
         JButton btnLogout = new JButton("Logout");
-
-        JPanel bottomPanel = new JPanel();
-        bottomPanel.add(btnManageStaff);
-        bottomPanel.add(btnLogout);
-
-        add(welcomeLabel, BorderLayout.CENTER);
-        add(bottomPanel, BorderLayout.SOUTH);
 
         String role = loggedInUser.getRole();
 
-        if(role.equalsIgnoreCase("staff")){
-            btnManageStaff.setEnabled(false);
+        // Show different buttons based on role
+        if(role.equalsIgnoreCase("admin") || role.equalsIgnoreCase("hr")){
+            JButton btnManageStaff = new JButton("Manage Staff");
+            buttonPanel.add(btnManageStaff);
+            
+            btnManageStaff.addActionListener(e -> {
+                new StaffManagementUI().setVisible(true);
+            });
+        } else if(role.equalsIgnoreCase("staff")) {
+            JButton btnMyProfile = new JButton("My Profile");
+            buttonPanel.add(btnMyProfile);
+            
+            btnMyProfile.addActionListener(e -> {
+                new EmployeeSelfServiceUI().setVisible(true);
+            });
         }
 
-        btnManageStaff.addActionListener(e -> {
-            new StaffManagementUI().setVisible(true);
-        });
+        buttonPanel.add(btnLogout);
+
+        add(welcomeLabel, BorderLayout.CENTER);
+        add(buttonPanel, BorderLayout.SOUTH);
 
         btnLogout.addActionListener(e ->{
+            CurrentUser.set(null);
             new LoginUI().setVisible(true);
             dispose();
         });
