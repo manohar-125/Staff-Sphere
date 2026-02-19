@@ -70,7 +70,7 @@ public class UserDAO {
         // Prevent admin from being deactivated
         User user = getUserByUsername(username);
         if(user != null && user.getRole().equalsIgnoreCase("admin")) {
-            return false; // Cannot change admin status
+            return false;
         }
 
         String sql = "UPDATE users SET status = ? WHERE username = ?";
@@ -90,7 +90,6 @@ public class UserDAO {
     }
 
     public boolean deleteUser(String username) {
-        // Prevent admin from being deleted
         User user = getUserByUsername(username);
         if(user != null && user.getRole().equalsIgnoreCase("admin")) {
             return false;

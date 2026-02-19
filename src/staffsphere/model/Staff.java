@@ -81,13 +81,6 @@ public class Staff {
         this.designation = designation;
     }
 
-    public String getRole(){
-        return this.designation;
-    }
-    public void setRole(String role){
-        this.designation = role;
-    }
-
     public double getSalary(){
         return this.salary;
     }

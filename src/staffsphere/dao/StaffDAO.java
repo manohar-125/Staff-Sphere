@@ -29,13 +29,12 @@ public class StaffDAO {
         Connection con = null;
         try{
             con = DBConnection.getConnection();
-            con.setAutoCommit(false); // Start transaction
+            con.setAutoCommit(false);
 
-            // First, create user account
             UserDAO userDAO = new UserDAO();
             if(userDAO.userExists(staff.getEmpCode())) {
                 con.rollback();
-                return false; // Username already exists
+                return false;
             }
 
             if(!userDAO.createUser(staff.getEmpCode(), password, role)) {
@@ -43,7 +42,6 @@ public class StaffDAO {
                 return false;
             }
 
-            // Then create employee record
             PreparedStatement ps = con.prepareStatement(sql);
             ps.setString(1, staff.getEmpCode());
             ps.setString(2, staff.getName());
@@ -118,12 +116,10 @@ public class StaffDAO {
         
         if(staff == null) return false;
 
-        // Check permissions
         if(currentUser.getRole().equalsIgnoreCase("hr")) {
-            // HR can only delete staff, not other HR or admin
             User targetUser = new UserDAO().getUserByUsername(staff.getEmpCode());
             if(targetUser != null && !targetUser.getRole().equalsIgnoreCase("staff")) {
-                return false; // HR cannot delete admin or other HR
+                return false;
             }
         }
 
@@ -135,7 +131,6 @@ public class StaffDAO {
             ps.setInt(1, id);
             ps.executeUpdate();
 
-            // Also update user status
             new UserDAO().updateUserStatus(staff.getEmpCode(), "inactive");
             return true;
 
@@ -151,9 +146,8 @@ public class StaffDAO {
         
         if(staff == null) return false;
 
-        // Check permissions
+
         if(currentUser.getRole().equalsIgnoreCase("hr")) {
-            // HR can only restore staff, not other HR or admin
             User targetUser = new UserDAO().getUserByUsername(staff.getEmpCode());
             if(targetUser != null && !targetUser.getRole().equalsIgnoreCase("staff")) {
                 return false;
@@ -168,7 +162,6 @@ public class StaffDAO {
             ps.setInt(1, id);
             ps.executeUpdate();
 
-            // Also update user status
             new UserDAO().updateUserStatus(staff.getEmpCode(), "active");
             return true;
 
@@ -181,16 +174,15 @@ public class StaffDAO {
     public boolean updateStaff(Staff staff){
         User currentUser = CurrentUser.get();
         
-        // Check permissions
+
         if(currentUser.getRole().equalsIgnoreCase("hr")) {
-            // HR can only update staff and themselves
             User targetUser = new UserDAO().getUserByUsername(staff.getEmpCode());
             if(targetUser != null && targetUser.getRole().equalsIgnoreCase("admin")) {
-                return false; // HR cannot update admin
+                return false;
             }
             if(targetUser != null && targetUser.getRole().equalsIgnoreCase("hr") 
                 && !targetUser.getUsername().equals(currentUser.getUsername())) {
-                return false; // HR can only update their own HR record
+                return false;
             }
         }
 

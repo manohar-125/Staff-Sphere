@@ -25,7 +25,6 @@ public class DashboardUI extends JFrame{
 
         String role = loggedInUser.getRole();
 
-        // Show different buttons based on role
         if(role.equalsIgnoreCase("admin") || role.equalsIgnoreCase("hr")){
             JButton btnManageStaff = new JButton("Manage Staff");
             buttonPanel.add(btnManageStaff);

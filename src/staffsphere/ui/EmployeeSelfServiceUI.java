@@ -27,7 +27,7 @@ public class EmployeeSelfServiceUI extends JFrame {
 
     public EmployeeSelfServiceUI() {
         currentUser = CurrentUser.get();
-        
+
         if(currentUser == null) {
             JOptionPane.showMessageDialog(this, "Please login first");
             dispose();
@@ -38,7 +38,6 @@ public class EmployeeSelfServiceUI extends JFrame {
         userDAO = new UserDAO();
 
         currentStaff = staffDAO.getStaffByEmpCode(currentUser.getUsername());
-
         if(currentStaff == null) {
             JOptionPane.showMessageDialog(this, "Employee record not found");
             dispose();

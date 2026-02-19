@@ -1,0 +1,12 @@
+# Example config.properties for StaffSphere
+# Copy this file to `config.properties` and fill values, OR set environment variables DB_URL, DB_USER, DB_PASSWORD
+
+# JDBC URL for your MySQL server
+# Example: jdbc:mysql://localhost:3306/staffsphere
+db.url=
+
+# Database username
+db.user=
+
+# Database password
+db.password=

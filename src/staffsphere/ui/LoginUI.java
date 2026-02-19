@@ -77,13 +77,10 @@ public class LoginUI extends JFrame{
                 return;
             }
 
-            // Check password - supports both plain text (legacy) and BCrypt hashed passwords
             boolean passwordMatches = false;
             if(user.getPassword().startsWith("$2a$") || user.getPassword().startsWith("$2b$")) {
-                // BCrypt hashed password
                 passwordMatches = PasswordUtil.verifyPassword(passWord, user.getPassword());
             } else {
-                // Plain text password (for backward compatibility)
                 passwordMatches = passWord.equals(user.getPassword());
             }
 
