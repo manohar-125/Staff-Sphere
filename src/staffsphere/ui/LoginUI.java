@@ -1,4 +1,5 @@
 package staffsphere.ui;
+
 import staffsphere.dao.UserDAO;
 import staffsphere.model.User;
 import staffsphere.util.CurrentUser;

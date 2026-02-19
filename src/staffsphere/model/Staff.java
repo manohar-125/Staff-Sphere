@@ -19,7 +19,7 @@ public class Staff {
     public Staff(){
     }
 
-    public Staff(int id, String empCode, String name, String email, String phone, 
+    public Staff(int id, String empCode, String name, String email, String phone,
                  String department, String designation, double salary, String status) {
         this.id = id;
         this.empCode = empCode;

@@ -1,4 +1,5 @@
 package staffsphere.dao;
+
 import staffsphere.db.DBConnection;
 import staffsphere.model.User;
 import staffsphere.util.PasswordUtil;
@@ -67,7 +68,6 @@ public class UserDAO {
     }
 
     public boolean updateUserStatus(String username, String newStatus) {
-        // Prevent admin from being deactivated
         User user = getUserByUsername(username);
         if(user != null && user.getRole().equalsIgnoreCase("admin")) {
             return false;

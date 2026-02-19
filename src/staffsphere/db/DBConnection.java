@@ -13,12 +13,10 @@ public class DBConnection {
     private static String PASSWORD;
 
     static {
-        // First try environment variables (recommended for GitHub deployments)
         URL = System.getenv("DB_URL");
         USER = System.getenv("DB_USER");
         PASSWORD = System.getenv("DB_PASSWORD");
 
-        // If any value is missing, try to load from a config file named 'config.properties'
         if (URL == null || USER == null || PASSWORD == null) {
             Properties props = new Properties();
             try (InputStream in = new FileInputStream("config.properties")) {
@@ -27,7 +25,6 @@ public class DBConnection {
                 if (USER == null) USER = props.getProperty("db.user");
                 if (PASSWORD == null) PASSWORD = props.getProperty("db.password");
             } catch (Exception e) {
-                // Missing config file is okay — we'll handle nulls at runtime.
             }
         }
     }

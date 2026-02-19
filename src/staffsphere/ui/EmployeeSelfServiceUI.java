@@ -208,13 +208,10 @@ public class EmployeeSelfServiceUI extends JFrame {
             return;
         }
 
-        // Verify old password - support both plain text and BCrypt
         boolean passwordMatches = false;
         if(currentUser.getPassword().startsWith("$2a$") || currentUser.getPassword().startsWith("$2b$")) {
-            // BCrypt hashed password
             passwordMatches = PasswordUtil.verifyPassword(oldPassword, currentUser.getPassword());
         } else {
-            // Plain text password (legacy)
             passwordMatches = oldPassword.equals(currentUser.getPassword());
         }
 
@@ -233,7 +230,6 @@ public class EmployeeSelfServiceUI extends JFrame {
             return;
         }
 
-        // Update password in database with BCrypt hash
         try {
             String hashedPassword = PasswordUtil.hashPassword(newPassword);
             java.sql.Connection con = staffsphere.db.DBConnection.getConnection();
